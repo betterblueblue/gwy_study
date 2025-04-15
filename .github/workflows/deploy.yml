@@ -32,3 +32,8 @@ jobs:
         SOURCE: "dist/"
         TARGET: "/var/www/gwy-study/"
         EXCLUDE: "/dist/, /node_modules/, /.git/, /.github/"
+        SCRIPT_BEFORE: |
+          mkdir -p /var/www/gwy-study
+          rm -rf /var/www/gwy-study/*
+        SCRIPT_AFTER: |
+          ls -la /var/www/gwy-study
