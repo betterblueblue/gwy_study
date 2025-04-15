@@ -140,7 +140,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Folder, Search, Bold, Italic, TextUnderline, List, Sort } from '@element-plus/icons-vue'
+import { Folder, Search, Document, Edit } from '@element-plus/icons-vue'
 
 // 笔记分类
 const categories = ref([
