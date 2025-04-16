@@ -5,6 +5,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
+  base: './',
   plugins: [
     vue(),
     AutoImport({
@@ -17,5 +18,9 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets'
   }
 })

@@ -467,17 +467,7 @@ onMounted(() => {
   fetchPlans();
 });
 
-// 题目管理方法
-const fetchQuestions = async () => {
-  try {
-    const response = await fetch(`/api/questions?page=${questionPage.value}&limit=${questionLimit.value}`);
-    const data = await response.json();
-    questions.value = data.data;
-    questionTotal.value = data.total;
-  } catch (error) {
-    ElMessage.error('获取题目列表失败');
-  }
-};
+
 
 const addOption = () => {
   questionForm.value.options.push({ key: '', content: '' });
