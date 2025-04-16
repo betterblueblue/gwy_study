@@ -460,9 +460,6 @@ const planForm = ref({
   tasks: []
 });
 
-// 标签输入已在上方定义
-const newTag = ref('');
-
 // 初始化数据
 onMounted(() => {
   fetchQuestions();
