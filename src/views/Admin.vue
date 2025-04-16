@@ -546,7 +546,6 @@ const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const showQuestionDialog = ref(false);
-const editingQuestion = ref(null);
 const questionForm = ref({
   subject: '',
   type: '',
