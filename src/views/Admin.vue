@@ -409,8 +409,8 @@ const removeTag = (tag) => {
 };
 
 // 导入导出处理
-const handleImportSuccess = (response) => {
-  ElMessage.success(response.message);
+const handleImportSuccess = () => {
+  ElMessage.success('导入成功');
   fetchQuestions();
 };
 
@@ -499,30 +499,6 @@ const deleteQuestion = async (id) => {
     }
   } catch (error) {
     ElMessage.error('删除失败');
-  }
-};
-
-const handleImportSuccess = () => {
-  ElMessage.success('导入成功');
-  fetchQuestions();
-};
-
-const handleImportError = () => {
-  ElMessage.error('导入失败');
-};
-
-const exportQuestions = async () => {
-  try {
-    const response = await fetch('/api/questions/export');
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '题目导出.xlsx';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    ElMessage.error('导出失败');
   }
 };
 
