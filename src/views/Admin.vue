@@ -11,24 +11,127 @@
             :show-file-list="false"
             :on-success="handleImportSuccess"
             :on-error="handleImportError"
+            accept=".csv"
           >
             <el-button>导入题目</el-button>
           </el-upload>
-          <el-button @click="exportQuestions">导出题目</el-button>
+          <el-button @click="handleExport">导出题目</el-button>
         </div>
 
-        <el-table :data="questions" style="width: 100%">
+        <el-table :data="questions" style="width: 100%" v-loading="loading">
           <el-table-column prop="subject" label="科目" width="100" />
           <el-table-column prop="type" label="题型" width="120" />
           <el-table-column prop="content" label="题目内容" show-overflow-tooltip />
-          <el-table-column prop="difficulty" label="难度" width="100" />
-          <el-table-column label="操作" width="200">
+          <el-table-column prop="difficulty" label="难度" width="100">
             <template #default="{ row }">
-              <el-button size="small" @click="editQuestion(row)">编辑</el-button>
-              <el-button size="small" type="danger" @click="deleteQuestion(row._id)">删除</el-button>
+              {{ row.difficulty }} / 5
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button size="small" type="danger" @click="handleDelete(row._id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
+
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+
+        <!-- 题目对话框 -->
+        <el-dialog
+          v-model="showQuestionDialog"
+          :title="editingQuestion ? '编辑题目' : '添加题目'"
+          width="60%"
+        >
+          <el-form :model="questionForm" label-width="100px">
+            <el-form-item label="科目" required>
+              <el-select v-model="questionForm.subject" placeholder="请选择科目">
+                <el-option label="行测" value="行测" />
+                <el-option label="申论" value="申论" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题型" required>
+              <el-select v-model="questionForm.type" placeholder="请选择题型">
+                <el-option label="言语理解" value="言语理解" />
+                <el-option label="数量关系" value="数量关系" />
+                <el-option label="判断推理" value="判断推理" />
+                <el-option label="资料分析" value="资料分析" />
+                <el-option label="常识判断" value="常识判断" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题目内容" required>
+              <el-input
+                v-model="questionForm.content"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入题目内容"
+              />
+            </el-form-item>
+            <el-form-item label="选项">
+              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
+                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
+                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
+                <el-button type="danger" @click="removeOption(index)">删除</el-button>
+              </div>
+              <el-button type="primary" @click="addOption">添加选项</el-button>
+            </el-form-item>
+            <el-form-item label="正确答案" required>
+              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
+            </el-form-item>
+            <el-form-item label="解析">
+              <el-input
+                v-model="questionForm.explanation"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入题目解析"
+              />
+            </el-form-item>
+            <el-form-item label="难度">
+              <el-rate
+                v-model="questionForm.difficulty"
+                :max="5"
+                :texts="['简单', '较易', '中等', '较难', '困难']"
+                show-text
+              />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-tag
+                v-for="tag in questionForm.tags"
+                :key="tag"
+                closable
+                @close="removeTag(tag)"
+                style="margin-right: 10px"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+                v-if="showTagInput"
+                v-model="newTag"
+                class="tag-input"
+                size="small"
+                @keyup.enter="handleTagInputConfirm"
+                @blur="handleTagInputConfirm"
+              />
+              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
+                + 新标签
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="showQuestionDialog = false">取消</el-button>
+              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
 
         <el-pagination
           v-model:current-page="questionPage"
@@ -132,6 +235,104 @@
         </el-table>
 
         <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+
+        <!-- 题目对话框 -->
+        <el-dialog
+          v-model="showQuestionDialog"
+          :title="editingQuestion ? '编辑题目' : '添加题目'"
+          width="60%"
+        >
+          <el-form :model="questionForm" label-width="100px">
+            <el-form-item label="科目" required>
+              <el-select v-model="questionForm.subject" placeholder="请选择科目">
+                <el-option label="行测" value="行测" />
+                <el-option label="申论" value="申论" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题型" required>
+              <el-select v-model="questionForm.type" placeholder="请选择题型">
+                <el-option label="言语理解" value="言语理解" />
+                <el-option label="数量关系" value="数量关系" />
+                <el-option label="判断推理" value="判断推理" />
+                <el-option label="资料分析" value="资料分析" />
+                <el-option label="常识判断" value="常识判断" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题目内容" required>
+              <el-input
+                v-model="questionForm.content"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入题目内容"
+              />
+            </el-form-item>
+            <el-form-item label="选项">
+              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
+                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
+                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
+                <el-button type="danger" @click="removeOption(index)">删除</el-button>
+              </div>
+              <el-button type="primary" @click="addOption">添加选项</el-button>
+            </el-form-item>
+            <el-form-item label="正确答案" required>
+              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
+            </el-form-item>
+            <el-form-item label="解析">
+              <el-input
+                v-model="questionForm.explanation"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入题目解析"
+              />
+            </el-form-item>
+            <el-form-item label="难度">
+              <el-rate
+                v-model="questionForm.difficulty"
+                :max="5"
+                :texts="['简单', '较易', '中等', '较难', '困难']"
+                show-text
+              />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-tag
+                v-for="tag in questionForm.tags"
+                :key="tag"
+                closable
+                @close="removeTag(tag)"
+                style="margin-right: 10px"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+                v-if="showTagInput"
+                v-model="newTag"
+                class="tag-input"
+                size="small"
+                @keyup.enter="handleTagInputConfirm"
+                @blur="handleTagInputConfirm"
+              />
+              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
+                + 新标签
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="showQuestionDialog = false">取消</el-button>
+              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
+
+        <el-pagination
           v-model:current-page="notePage"
           v-model:page-size="noteLimit"
           :total="noteTotal"
@@ -180,6 +381,104 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+
+        <!-- 题目对话框 -->
+        <el-dialog
+          v-model="showQuestionDialog"
+          :title="editingQuestion ? '编辑题目' : '添加题目'"
+          width="60%"
+        >
+          <el-form :model="questionForm" label-width="100px">
+            <el-form-item label="科目" required>
+              <el-select v-model="questionForm.subject" placeholder="请选择科目">
+                <el-option label="行测" value="行测" />
+                <el-option label="申论" value="申论" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题型" required>
+              <el-select v-model="questionForm.type" placeholder="请选择题型">
+                <el-option label="言语理解" value="言语理解" />
+                <el-option label="数量关系" value="数量关系" />
+                <el-option label="判断推理" value="判断推理" />
+                <el-option label="资料分析" value="资料分析" />
+                <el-option label="常识判断" value="常识判断" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="题目内容" required>
+              <el-input
+                v-model="questionForm.content"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入题目内容"
+              />
+            </el-form-item>
+            <el-form-item label="选项">
+              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
+                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
+                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
+                <el-button type="danger" @click="removeOption(index)">删除</el-button>
+              </div>
+              <el-button type="primary" @click="addOption">添加选项</el-button>
+            </el-form-item>
+            <el-form-item label="正确答案" required>
+              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
+            </el-form-item>
+            <el-form-item label="解析">
+              <el-input
+                v-model="questionForm.explanation"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入题目解析"
+              />
+            </el-form-item>
+            <el-form-item label="难度">
+              <el-rate
+                v-model="questionForm.difficulty"
+                :max="5"
+                :texts="['简单', '较易', '中等', '较难', '困难']"
+                show-text
+              />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-tag
+                v-for="tag in questionForm.tags"
+                :key="tag"
+                closable
+                @close="removeTag(tag)"
+                style="margin-right: 10px"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+                v-if="showTagInput"
+                v-model="newTag"
+                class="tag-input"
+                size="small"
+                @keyup.enter="handleTagInputConfirm"
+                @blur="handleTagInputConfirm"
+              />
+              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
+                + 新标签
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="showQuestionDialog = false">取消</el-button>
+              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
 
         <el-pagination
           v-model:current-page="planPage"
@@ -232,13 +531,165 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import * as questionApi from '../api/questions';
 
 // 标签页
 const activeTab = ref('questions');
 
+// 数据列表相关
+const loading = ref(false);
+
 // 题目管理
 const questions = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const showQuestionDialog = ref(false);
+const editingQuestion = ref(null);
+const questionForm = ref({
+  subject: '',
+  type: '',
+  content: '',
+  options: [],
+  answer: '',
+  explanation: '',
+  difficulty: 3,
+  tags: []
+});
+const showTagInput = ref(false);
+const newTag = ref('');
+
+// 获取题目列表
+const fetchQuestions = async () => {
+  try {
+    loading.value = true;
+    const { data, total: totalCount } = await questionApi.getQuestions({
+      page: currentPage.value,
+      limit: pageSize.value
+    });
+    questions.value = data;
+    total.value = totalCount;
+  } catch (error) {
+    ElMessage.error('获取题目列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 分页处理
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+  fetchQuestions();
+};
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  fetchQuestions();
+};
+
+// 题目表单处理
+const resetQuestionForm = () => {
+  questionForm.value = {
+    subject: '',
+    type: '',
+    content: '',
+    options: [],
+    answer: '',
+    explanation: '',
+    difficulty: 3,
+    tags: []
+  };
+  editingQuestion.value = null;
+};
+
+const handleEdit = (row) => {
+  editingQuestion.value = row;
+  questionForm.value = { ...row };
+  showQuestionDialog.value = true;
+};
+
+const handleDelete = async (id) => {
+  try {
+    await ElMessageBox.confirm('确认删除该题目吗？', '提示', {
+      type: 'warning'
+    });
+    await questionApi.deleteQuestion(id);
+    ElMessage.success('删除成功');
+    fetchQuestions();
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败');
+    }
+  }
+};
+
+const handleSaveQuestion = async () => {
+  try {
+    if (editingQuestion.value) {
+      await questionApi.updateQuestion(editingQuestion.value._id, questionForm.value);
+      ElMessage.success('更新成功');
+    } else {
+      await questionApi.createQuestion(questionForm.value);
+      ElMessage.success('添加成功');
+    }
+    showQuestionDialog.value = false;
+    resetQuestionForm();
+    fetchQuestions();
+  } catch (error) {
+    ElMessage.error(editingQuestion.value ? '更新失败' : '添加失败');
+  }
+};
+
+// 选项处理
+const addOption = () => {
+  questionForm.value.options.push({ key: '', content: '' });
+};
+
+const removeOption = (index) => {
+  questionForm.value.options.splice(index, 1);
+};
+
+// 标签处理
+const handleTagInputConfirm = () => {
+  const tag = newTag.value.trim();
+  if (tag && !questionForm.value.tags.includes(tag)) {
+    questionForm.value.tags.push(tag);
+  }
+  showTagInput.value = false;
+  newTag.value = '';
+};
+
+const removeTag = (tag) => {
+  const index = questionForm.value.tags.indexOf(tag);
+  if (index > -1) {
+    questionForm.value.tags.splice(index, 1);
+  }
+};
+
+// 导入导出处理
+const handleImportSuccess = (response) => {
+  ElMessage.success(response.message);
+  fetchQuestions();
+};
+
+const handleImportError = () => {
+  ElMessage.error('导入失败');
+};
+
+const handleExport = async () => {
+  try {
+    await questionApi.exportQuestions();
+    ElMessage.success('导出成功');
+  } catch (error) {
+    ElMessage.error('导出失败');
+  }
+};
+
+// 初始化
+onMounted(() => {
+  fetchQuestions();
+});
 const questionPage = ref(1);
 const questionLimit = ref(10);
 const questionTotal = ref(0);
