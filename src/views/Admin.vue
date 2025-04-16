@@ -428,11 +428,6 @@ const handleExport = async () => {
 };
 
 // 初始化
-onMounted(() => {
-  fetchQuestions();
-});
-// 题目管理相关变量已在上方定义
-
 // 笔记管理
 const notes = ref([]);
 const notePage = ref(1);
@@ -460,36 +455,11 @@ const planForm = ref({
   tasks: []
 });
 
-// 初始化数据
 onMounted(() => {
   fetchQuestions();
   fetchNotes();
   fetchPlans();
 });
-
-
-
-const addOption = () => {
-  questionForm.value.options.push({ key: '', content: '' });
-};
-
-const removeOption = (index) => {
-  questionForm.value.options.splice(index, 1);
-};
-
-const addTag = () => {
-  const tag = newTag.value.trim();
-  if (tag && !questionForm.value.tags.includes(tag)) {
-    questionForm.value.tags.push(tag);
-  }
-  newTag.value = '';
-  showTagInput.value = false;
-};
-
-const removeTag = (tag) => {
-  const index = questionForm.value.tags.indexOf(tag);
-  questionForm.value.tags.splice(index, 1);
-};
 
 const saveQuestion = async () => {
   try {
