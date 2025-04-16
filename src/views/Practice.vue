@@ -74,46 +74,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Document, Edit } from '@element-plus/icons-vue'
+import { useQuestionsStore } from '../stores/questions'
 
-// 当前选中的科目
-const activeSubject = ref('1')
-
-// 选中的题型
-const selectedTypes = ref(['1'])
-
-// 模拟题目数据
-const questions = ref([
-  {
-    id: 1,
-    type: '言语理解',
-    content: '在社会发展进程中，既要看到科技创新的重要性，也要认识到创新不是________的代名词，创新与传统是辩证统一的关系，创新离不开传统，创新是对传统的传承和发展。填入划横线部分最恰当的一项是：',
-    options: [
-      { key: 'A', content: '颠覆' },
-      { key: 'B', content: '革命' },
-      { key: 'C', content: '断裂' },
-      { key: 'D', content: '对立' }
-    ],
-    answer: 'A'
-  },
-  // 可以添加更多题目
-])
-
-// 当前题目索引
-const currentQuestionIndex = ref(0)
-
-// 选中的答案
-const selectedAnswer = ref('')
+const questionsStore = useQuestionsStore()
 
 // 剩余时间（秒）
 const remainingTime = ref(3600) // 1小时
 
+onMounted(async () => {
+  await questionsStore.fetchQuestions()
+})
+
+// 模拟题目数据
+const questions = computed(() => questionsStore.questions)
+
+// 当前选中的科目
+const activeSubject = computed(() => questionsStore.activeSubject)
+
+// 选中的题型
+const selectedTypes = computed(() => questionsStore.selectedTypes)
+
 // 计算当前题目
-const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
+const currentQuestion = computed(() => questionsStore.currentQuestion)
 
 // 是否是最后一题
-const isLastQuestion = computed(() => currentQuestionIndex.value === questions.value.length - 1)
+const isLastQuestion = computed(() => questionsStore.isLastQuestion)
+
+// 选中的答案
+const selectedAnswer = computed({
+  get: () => questionsStore.selectedAnswer,
+  set: (value) => questionsStore.submitAnswer(value)
+})
 
 // 格式化时间
 const formatTime = (seconds) => {
@@ -124,28 +117,24 @@ const formatTime = (seconds) => {
 
 // 处理科目选择
 const handleSubjectSelect = (index) => {
-  activeSubject.value = index
-  // 这里可以根据选择的科目加载对应的题目
+  questionsStore.setActiveSubject(index)
 }
 
 // 上一题
 const previousQuestion = () => {
-  if (currentQuestionIndex.value > 0) {
-    currentQuestionIndex.value--
-    selectedAnswer.value = ''
-  }
+  questionsStore.previousQuestion()
 }
 
 // 下一题或提交
 const nextQuestion = () => {
   if (isLastQuestion.value) {
-    // 提交答案逻辑
+    // TODO: 实现提交逻辑
     console.log('提交答案')
   } else {
-    currentQuestionIndex.value++
-    selectedAnswer.value = ''
+    questionsStore.nextQuestion()
   }
 }
+
 </script>
 
 <style scoped>

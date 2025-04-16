@@ -10,12 +10,12 @@
           </template>
           <el-progress
             type="dashboard"
-            :percentage="75"
+            :percentage="questionsStore.studyProgress.progressPercentage"
             :color="progressColor"
           />
           <div class="progress-info">
-            <p>今日学习时长：2小时</p>
-            <p>连续学习天数：7天</p>
+            <p>今日学习时长：{{ questionsStore.studyProgress.dailyStudyHours }}小时</p>
+            <p>连续学习天数：{{ questionsStore.studyProgress.consecutiveDays }}天</p>
           </div>
         </el-card>
       </el-col>
@@ -27,13 +27,13 @@
             </div>
           </template>
           <div class="mistakes-stats">
-            <el-statistic title="今日错题数" :value="5">
+            <el-statistic title="今日错题数" :value="questionsStore.mistakes.todayCount">
               <template #suffix>
                 <span class="suffix-label">道</span>
               </template>
             </el-statistic>
             <el-divider direction="vertical" />
-            <el-statistic title="待复习错题" :value="28">
+            <el-statistic title="待复习错题" :value="questionsStore.mistakes.totalReviewCount">
               <template #suffix>
                 <span class="suffix-label">道</span>
               </template>
@@ -48,7 +48,7 @@
               <span>考试倒计时</span>
             </div>
           </template>
-          <el-statistic title="距离考试还有" :value="98">
+          <el-statistic title="距离考试还有" :value="questionsStore.examCountdown">
             <template #suffix>
               <span class="suffix-label">天</span>
             </template>
@@ -66,7 +66,7 @@
       </template>
       <el-timeline>
         <el-timeline-item
-          v-for="(task, index) in todayTasks"
+          v-for="(task, index) in notesStore.todayTasks"
           :key="index"
           :type="task.status"
           :timestamp="task.time"
@@ -79,7 +79,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useQuestionsStore } from '../stores/questions'
+import { useNotesStore } from '../stores/notes'
+
+const questionsStore = useQuestionsStore()
+const notesStore = useNotesStore()
 
 const progressColor = computed(() => {
   return [
@@ -91,23 +96,10 @@ const progressColor = computed(() => {
   ]
 })
 
-const todayTasks = ref([
-  {
-    content: '行测：数量关系专项练习',
-    time: '09:00-10:30',
-    status: 'success'
-  },
-  {
-    content: '申论：大作文写作技巧学习',
-    time: '14:00-16:00',
-    status: 'primary'
-  },
-  {
-    content: '错题复习',
-    time: '20:00-21:00',
-    status: 'warning'
-  }
-])
+onMounted(async () => {
+  await notesStore.fetchNotes()
+  await notesStore.fetchMistakes()
+})
 </script>
 
 <style scoped>
