@@ -45,93 +45,7 @@
           @current-change="handleCurrentChange"
         />
 
-        <!-- 题目对话框 -->
-        <el-dialog
-          v-model="showQuestionDialog"
-          :title="editingQuestion ? '编辑题目' : '添加题目'"
-          width="60%"
-        >
-          <el-form :model="questionForm" label-width="100px">
-            <el-form-item label="科目" required>
-              <el-select v-model="questionForm.subject" placeholder="请选择科目">
-                <el-option label="行测" value="行测" />
-                <el-option label="申论" value="申论" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题型" required>
-              <el-select v-model="questionForm.type" placeholder="请选择题型">
-                <el-option label="言语理解" value="言语理解" />
-                <el-option label="数量关系" value="数量关系" />
-                <el-option label="判断推理" value="判断推理" />
-                <el-option label="资料分析" value="资料分析" />
-                <el-option label="常识判断" value="常识判断" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题目内容" required>
-              <el-input
-                v-model="questionForm.content"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入题目内容"
-              />
-            </el-form-item>
-            <el-form-item label="选项">
-              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
-                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
-                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
-                <el-button type="danger" @click="removeOption(index)">删除</el-button>
-              </div>
-              <el-button type="primary" @click="addOption">添加选项</el-button>
-            </el-form-item>
-            <el-form-item label="正确答案" required>
-              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
-            </el-form-item>
-            <el-form-item label="解析">
-              <el-input
-                v-model="questionForm.explanation"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入题目解析"
-              />
-            </el-form-item>
-            <el-form-item label="难度">
-              <el-rate
-                v-model="questionForm.difficulty"
-                :max="5"
-                :texts="['简单', '较易', '中等', '较难', '困难']"
-                show-text
-              />
-            </el-form-item>
-            <el-form-item label="标签">
-              <el-tag
-                v-for="tag in questionForm.tags"
-                :key="tag"
-                closable
-                @close="removeTag(tag)"
-                style="margin-right: 10px"
-              >
-                {{ tag }}
-              </el-tag>
-              <el-input
-                v-if="showTagInput"
-                v-model="newTag"
-                class="tag-input"
-                size="small"
-                @keyup.enter="handleTagInputConfirm"
-                @blur="handleTagInputConfirm"
-              />
-              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
-                + 新标签
-              </el-button>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="showQuestionDialog = false">取消</el-button>
-              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
-            </span>
-          </template>
-        </el-dialog>
+  
 
         <el-pagination
           v-model:current-page="questionPage"
@@ -244,93 +158,7 @@
           @current-change="handleCurrentChange"
         />
 
-        <!-- 题目对话框 -->
-        <el-dialog
-          v-model="showQuestionDialog"
-          :title="editingQuestion ? '编辑题目' : '添加题目'"
-          width="60%"
-        >
-          <el-form :model="questionForm" label-width="100px">
-            <el-form-item label="科目" required>
-              <el-select v-model="questionForm.subject" placeholder="请选择科目">
-                <el-option label="行测" value="行测" />
-                <el-option label="申论" value="申论" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题型" required>
-              <el-select v-model="questionForm.type" placeholder="请选择题型">
-                <el-option label="言语理解" value="言语理解" />
-                <el-option label="数量关系" value="数量关系" />
-                <el-option label="判断推理" value="判断推理" />
-                <el-option label="资料分析" value="资料分析" />
-                <el-option label="常识判断" value="常识判断" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题目内容" required>
-              <el-input
-                v-model="questionForm.content"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入题目内容"
-              />
-            </el-form-item>
-            <el-form-item label="选项">
-              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
-                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
-                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
-                <el-button type="danger" @click="removeOption(index)">删除</el-button>
-              </div>
-              <el-button type="primary" @click="addOption">添加选项</el-button>
-            </el-form-item>
-            <el-form-item label="正确答案" required>
-              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
-            </el-form-item>
-            <el-form-item label="解析">
-              <el-input
-                v-model="questionForm.explanation"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入题目解析"
-              />
-            </el-form-item>
-            <el-form-item label="难度">
-              <el-rate
-                v-model="questionForm.difficulty"
-                :max="5"
-                :texts="['简单', '较易', '中等', '较难', '困难']"
-                show-text
-              />
-            </el-form-item>
-            <el-form-item label="标签">
-              <el-tag
-                v-for="tag in questionForm.tags"
-                :key="tag"
-                closable
-                @close="removeTag(tag)"
-                style="margin-right: 10px"
-              >
-                {{ tag }}
-              </el-tag>
-              <el-input
-                v-if="showTagInput"
-                v-model="newTag"
-                class="tag-input"
-                size="small"
-                @keyup.enter="handleTagInputConfirm"
-                @blur="handleTagInputConfirm"
-              />
-              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
-                + 新标签
-              </el-button>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="showQuestionDialog = false">取消</el-button>
-              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
-            </span>
-          </template>
-        </el-dialog>
+  
 
         <el-pagination
           v-model:current-page="notePage"
@@ -392,93 +220,7 @@
           @current-change="handleCurrentChange"
         />
 
-        <!-- 题目对话框 -->
-        <el-dialog
-          v-model="showQuestionDialog"
-          :title="editingQuestion ? '编辑题目' : '添加题目'"
-          width="60%"
-        >
-          <el-form :model="questionForm" label-width="100px">
-            <el-form-item label="科目" required>
-              <el-select v-model="questionForm.subject" placeholder="请选择科目">
-                <el-option label="行测" value="行测" />
-                <el-option label="申论" value="申论" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题型" required>
-              <el-select v-model="questionForm.type" placeholder="请选择题型">
-                <el-option label="言语理解" value="言语理解" />
-                <el-option label="数量关系" value="数量关系" />
-                <el-option label="判断推理" value="判断推理" />
-                <el-option label="资料分析" value="资料分析" />
-                <el-option label="常识判断" value="常识判断" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="题目内容" required>
-              <el-input
-                v-model="questionForm.content"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入题目内容"
-              />
-            </el-form-item>
-            <el-form-item label="选项">
-              <div v-for="(option, index) in questionForm.options" :key="index" class="option-item">
-                <el-input v-model="option.key" style="width: 60px" placeholder="选项" />
-                <el-input v-model="option.content" style="width: calc(100% - 120px)" placeholder="选项内容" />
-                <el-button type="danger" @click="removeOption(index)">删除</el-button>
-              </div>
-              <el-button type="primary" @click="addOption">添加选项</el-button>
-            </el-form-item>
-            <el-form-item label="正确答案" required>
-              <el-input v-model="questionForm.answer" placeholder="请输入正确答案" />
-            </el-form-item>
-            <el-form-item label="解析">
-              <el-input
-                v-model="questionForm.explanation"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入题目解析"
-              />
-            </el-form-item>
-            <el-form-item label="难度">
-              <el-rate
-                v-model="questionForm.difficulty"
-                :max="5"
-                :texts="['简单', '较易', '中等', '较难', '困难']"
-                show-text
-              />
-            </el-form-item>
-            <el-form-item label="标签">
-              <el-tag
-                v-for="tag in questionForm.tags"
-                :key="tag"
-                closable
-                @close="removeTag(tag)"
-                style="margin-right: 10px"
-              >
-                {{ tag }}
-              </el-tag>
-              <el-input
-                v-if="showTagInput"
-                v-model="newTag"
-                class="tag-input"
-                size="small"
-                @keyup.enter="handleTagInputConfirm"
-                @blur="handleTagInputConfirm"
-              />
-              <el-button v-else class="button-new-tag" size="small" @click="showTagInput = true">
-                + 新标签
-              </el-button>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="showQuestionDialog = false">取消</el-button>
-              <el-button type="primary" @click="handleSaveQuestion">确定</el-button>
-            </span>
-          </template>
-        </el-dialog>
+  
 
         <el-pagination
           v-model:current-page="planPage"
@@ -689,20 +431,7 @@ const handleExport = async () => {
 onMounted(() => {
   fetchQuestions();
 });
-const questionPage = ref(1);
-const questionLimit = ref(10);
-const questionTotal = ref(0);
-const editingQuestion = ref(null);
-const questionForm = ref({
-  subject: '',
-  type: '',
-  content: '',
-  options: [],
-  answer: '',
-  explanation: '',
-  difficulty: 3,
-  tags: []
-});
+// 题目管理相关变量已在上方定义
 
 // 笔记管理
 const notes = ref([]);
