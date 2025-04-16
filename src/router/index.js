@@ -6,13 +6,18 @@ const requireAdmin = (to, from, next) => {
   if (isAdmin) {
     next()
   } else {
-    next('/')
+    next('/login')
   }
 }
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/Login.vue')
+    },
     {
       path: '/',
       name: 'home',
