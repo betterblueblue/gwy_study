@@ -693,7 +693,6 @@ onMounted(() => {
 const questionPage = ref(1);
 const questionLimit = ref(10);
 const questionTotal = ref(0);
-const showQuestionDialog = ref(false);
 const editingQuestion = ref(null);
 const questionForm = ref({
   subject: '',
