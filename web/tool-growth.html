@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>增长/减少速算 · 工具</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="has-bottom-bar">
+  <header>
+    <div class="hero">
+      <a class="home-link" href="index.html">← 返回首页</a>
+      <h1>增长/减少速算</h1>
+      <p class="lead">当增长率 r ≈ ±1/n 时，快速估算基期、增长量/减少量，支持误差修正提示。</p>
+    </div>
+  </header>
+
+  <section class="toolbar" style="margin-top:0">
+    <label>方向：
+      <select id="dir">
+        <option value="auto">自动（按 r 正负）</option>
+        <option value="up">增长</option>
+        <option value="down">减少</option>
+      </select>
+    </label>
+    <label>现期：<input id="cur" type="number" step="0.01" placeholder="如 1200" /></label>
+    <label>r（%）：<input id="r" type="number" step="0.1" placeholder="如 13" /></label>
+    <label>≈ 1/n：<input id="n" type="number" step="0.1" placeholder="自动" /></label>
+    <label>位数：
+      <select id="prec">
+        <option value="0">0</option>
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+      </select>
+    </label>
+    <label>舍入：
+      <select id="round">
+        <option value="half-up" selected>四舍五入</option>
+        <option value="floor">向下取整</option>
+        <option value="ceil">向上取整</option>
+      </select>
+    </label>
+    <button id="btn-calc">计算</button>
+    <button id="btn-export" type="button">导出说明</button>
+    <button id="btn-reset" type="button">清空</button>
+  </section>
+
+  <section class="panel">
+    <div class="answer-area">
+      <div class="choices" id="quick-n"></div>
+    </div>
+
+    <div class="tip" id="result-card" hidden></div>
+  </section>
+
+  <section class="cards">
+    <details open>
+      <summary>速算原理与误差修正</summary>
+      <div class="card-body">
+        <ul>
+          <li>当 r ≈ +1/n：基期 ≈ 现期 × n/(n+1)，增长量 ≈ 现期 × 1/(n+1)</li>
+          <li>当 r ≈ −1/n：基期 ≈ 现期 × n/(n−1)，减少量 ≈ 现期 × 1/(n−1)</li>
+          <li>替换误差（分子）≈ r% × n − 100%（例：13%×8=104%，快算偏小≈+4%）</li>
+          <li>分母误差 ≈ |r − 1/n| 个百分点；更精确修正 ≈ 分子误差 − 分母差</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <!-- 移动端固定底部操作条 -->
+  <div class="bottom-bar">
+    <button id="mb-calc">计算</button>
+    <button id="mb-export">导出说明</button>
+    <button id="mb-reset" type="button">清空</button>
+  </div>
+
+  <footer>
+    <span id="score">v1 · 支持 2≤n≤20 快选</span>
+  </footer>
+
+  <script src="growth.js"></script>
+</body>
+</html>
+
