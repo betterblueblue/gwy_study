@@ -2,7 +2,7 @@
 ![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue) ![No deps](https://img.shields.io/badge/Deps-None-success)
 
 [首页](web/index.html) · [百化分](web/tool-baihuafen.html) · [增长/减少速算](web/tool-growth.html)
-（本地运行后访问：http://127.0.0.1:8000，移动端友好，支持导出步骤说明）
+（在线访问：https://gwy-study.pages.dev ｜ 本地运行：http://127.0.0.1:8000，移动端友好，支持导出步骤说明）
 
 无需第三方依赖，使用 Python 标准库 http.server 提供静态服务；前端原生 HTML/CSS/JS 实现，已适配移动端与暗色模式。
 
