@@ -19,6 +19,10 @@
   const tableEl = $('#table');
   const pocketGrid = $('#pocket-grid');
 
+  const btnViewWrong = $('#btn-view-wrong');
+  const btnExportWrong = $('#btn-export-wrong');
+  const wrongPanel = document.querySelector('#wrong-panel');
+  const wrongList = document.querySelector('#wrong-list');
   // 口袋表（按题主记忆表）
   const POCKET = [
     {p: 50.0, n: 2},
@@ -65,6 +69,62 @@
     const key = JSON.stringify(item);
     if (!arr.some(x=>JSON.stringify(x)===key)) { arr.push(item); saveWrong(arr); }
   };
+  // 
+  // 
+  // 
+  // 
+  // 错题本：数量、渲染、删除、导出
+  function updateWrongCount(){
+    const n = loadWrong().length;
+    const opt = modeEl && modeEl.querySelector('option[value="review"]');
+    if(opt){ opt.textContent = `复习错题（${n}）`; }
+    const wrongEl = document.querySelector('#wrong');
+    if(wrongEl){ wrongEl.textContent = `错题本：${n}`; }
+  }
+  function renderWrongList(){
+    if(!wrongList) return;
+    const arr = loadWrong();
+    wrongList.innerHTML = '';
+    if(arr.length===0){
+      const p = document.createElement('p');
+      p.className = 'note';
+      p.textContent = '错题本为空，先做几道题再来复习吧～';
+      wrongList.appendChild(p);
+      return;
+    }
+    arr.forEach((item, idx)=>{
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      let desc = '';
+      if(item.type==='p2n') desc = `${item.data.p}% ≈ 1/n，答案：n=${item.answer}`;
+      else if(item.type==='n2p') desc = `1/${item.data.n} ≈ ${item.answer}%`;
+      else desc = `[${item.type}]`;
+      cell.innerHTML = `<div style="margin-bottom:8px; font-weight:700">${desc}</div>`;
+      const actions = document.createElement('div');
+      const redo = document.createElement('button'); redo.textContent='重做';
+      redo.addEventListener('click',()=>{ modeEl.value='review'; nextQuestion(); });
+      const del = document.createElement('button'); del.textContent='删除';
+      del.style.marginLeft='8px';
+      del.addEventListener('click',()=>{ removeWrong(idx); });
+      actions.appendChild(redo); actions.appendChild(del);
+      cell.appendChild(actions);
+      wrongList.appendChild(cell);
+    });
+  }
+  function removeWrong(index){
+    const arr = loadWrong();
+    if(index>=0 && index<arr.length){ arr.splice(index,1); saveWrong(arr); }
+    updateWrongCount();
+    renderWrongList();
+  }
+  function exportWrong(){
+    const data = loadWrong();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'baihuafen_wrong.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const clearWrong = ()=> saveWrong([]);
 
   // UI 初始化
@@ -81,6 +141,7 @@
 
   function setScore(){ scoreEl.textContent = `得分：${correct} / ${total}`; }
   setScore();
+  updateWrongCount();
 
   function resetUI(){
     resultEl.textContent='';
@@ -182,14 +243,14 @@
       const n = Number(raw);
       ok = Number.isInteger(n) && n === currentQ.answer;
       explain = `标准答案：n = ${currentQ.answer}`;
-      if(!ok) addWrong(currentQ);
+      if(!ok) { addWrong(currentQ); updateWrongCount(); }
     }
     else if(currentQ.type==='n2p'){
       const x = Number(raw);
       const target = currentQ.answer;
       ok = !Number.isNaN(x) && close(x, target, 0.3);
       explain = `标准答案：≈ ${target}%（容差±0.3%）`;
-      if(!ok) addWrong(currentQ);
+      if(!ok) { addWrong(currentQ); updateWrongCount(); }
     }
     else if(currentQ.type==='formula'){
       const n = Number(raw);
@@ -233,6 +294,13 @@
   ansEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submit(); });
   btnShowTip.addEventListener('click', ()=>{ tipEl.hidden = !tipEl.hidden; });
   btnShowTable.addEventListener('click', ()=>{ tableEl.hidden = !tableEl.hidden; });
-  btnClearWrong.addEventListener('click', ()=>{ clearWrong(); alert('已清空错题本'); });
+  btnClearWrong.addEventListener('click', ()=>{
+    clearWrong();
+    updateWrongCount();
+    if(wrongPanel && !wrongPanel.hidden) renderWrongList();
+    alert('已清空错题本');
+  });
+  if(btnViewWrong){ btnViewWrong.addEventListener('click', ()=>{ if(wrongPanel){ wrongPanel.hidden = !wrongPanel.hidden; if(!wrongPanel.hidden) renderWrongList(); } }); }
+  if(btnExportWrong){ btnExportWrong.addEventListener('click', exportWrong); }
 })();
 

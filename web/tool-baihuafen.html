@@ -28,6 +28,7 @@
     <button id="btn-show-tip">显示提示</button>
     <button id="btn-show-table">速记表</button>
     <button id="btn-clear-wrong">清空错题本</button>
+    <button id="btn-view-wrong">错题本</button>
   </section>
 
   <main class="panel">
@@ -48,6 +49,14 @@
     <h2>常见百分数 ≈ 1/n 口袋表</h2>
     <div class="grid" id="pocket-grid"></div>
     <p class="note">说明：接受微小误差（±0.2%），如 1/15 可记 6.6% 或 6.7% 均判对。</p>
+  </section>
+  <section id="wrong-panel" class="table" hidden>
+    <h2>错题本</h2>
+    <div id="wrong-actions" style="margin:8px 0 10px;">
+      <button id="btn-export-wrong">导出错题</button>
+    </div>
+    <div id="wrong-list" class="grid"></div>
+    <p class="note">提示：题目做错时会自动加入错题本；可在上方“复习错题”模式随机练，也可在此页重做或删除。</p>
   </section>
 
   <section class="cards">
@@ -77,6 +86,7 @@
 
   <footer>
     <span id="score">得分：0 / 0</span>
+    <span id="wrong">错题本：0</span>
   </footer>
 
   <script src="app.js"></script>
