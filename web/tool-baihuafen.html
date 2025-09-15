@@ -21,6 +21,7 @@
         <option value="n2p">n（1/n） → 百分数</option>
         <option value="formula">公式法：n ≈ 100/x</option>
         <option value="nearby">取中/放缩判断</option>
+        <option value="challenge60">60秒挑战</option>
         <option value="review">复习错题</option>
       </select>
     </label>
@@ -53,6 +54,8 @@
   <section id="wrong-panel" class="table" hidden>
     <h2>错题本</h2>
     <div id="wrong-actions" style="margin:8px 0 10px;">
+      <button id="btn-import-wrong">导入错题</button>
+      <input id="file-import-wrong" type="file" accept="application/json" style="display:none">
       <button id="btn-export-wrong">导出错题</button>
     </div>
     <div id="wrong-list" class="grid"></div>

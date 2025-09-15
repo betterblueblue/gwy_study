@@ -23,6 +23,9 @@
   const btnExportWrong = $('#btn-export-wrong');
   const wrongPanel = document.querySelector('#wrong-panel');
   const wrongList = document.querySelector('#wrong-list');
+  const btnImportWrong = document.querySelector('#btn-import-wrong');
+  const fileImportWrong = document.querySelector('#file-import-wrong');
+  const wrongBadge = document.querySelector('#wrong');
   // 口袋表（按题主记忆表）
   const POCKET = [
     {p: 50.0, n: 2},
@@ -56,6 +59,9 @@
   let correct=0, total=0;
   let currentQ = null; // {type, data, answer}
   let reviewOnly = false;
+  // 60秒挑战状态
+  let challenge = { active:false, left:0, timer:null, correct:0, total:0, startedAt:0 };
+
 
   // 错题本（持久化）
   const LS_KEY = 'baihuafen_wrong_v1';
@@ -65,9 +71,20 @@
   const saveWrong = (arr)=> localStorage.setItem(LS_KEY, JSON.stringify(arr));
   const addWrong = (item)=>{
     const arr = loadWrong();
-    // 去重（用字符串化作为 key）
-    const key = JSON.stringify(item);
-    if (!arr.some(x=>JSON.stringify(x)===key)) { arr.push(item); saveWrong(arr); }
+    const baseKey = JSON.stringify({type:item.type, data:item.data, answer:item.answer});
+    const now = Date.now();
+    let found = null;
+    for(const x of arr){
+      const xKey = JSON.stringify({type:x.type, data:x.data, answer:x.answer});
+      if(xKey===baseKey){ found = x; break; }
+    }
+    if(found){
+      found.wrongCount = (found.wrongCount||0) + 1;
+      found.lastWrongAt = now;
+    }else{
+      arr.push({...item, wrongCount:1, lastWrongAt: now});
+    }
+    saveWrong(arr);
   };
   // 
   // 
@@ -99,13 +116,14 @@
       if(item.type==='p2n') desc = `${item.data.p}% ≈ 1/n，答案：n=${item.answer}`;
       else if(item.type==='n2p') desc = `1/${item.data.n} ≈ ${item.answer}%`;
       else desc = `[${item.type}]`;
-      cell.innerHTML = `<div style="margin-bottom:8px; font-weight:700">${desc}</div>`;
+      const wc = item.wrongCount!=null? item.wrongCount: 1;
+      cell.innerHTML = `<div style="margin-bottom:8px; font-weight:700">${desc} <span style='font-weight:500;color:#64748b'>×${wc}</span></div>`;
       const actions = document.createElement('div');
       const redo = document.createElement('button'); redo.textContent='重做';
-      redo.addEventListener('click',()=>{ modeEl.value='review'; nextQuestion(); });
+      redo.addEventListener('click',()=>{ modeEl.value='review'; if(wrongPanel) wrongPanel.hidden=true; window.scrollTo({top:0,behavior:'smooth'}); nextQuestion(); });
       const del = document.createElement('button'); del.textContent='删除';
       del.style.marginLeft='8px';
-      del.addEventListener('click',()=>{ removeWrong(idx); });
+      del.addEventListener('click',()=>{ removeWrong(idx); if(modeEl.value==='review'){ if(wrongPanel) wrongPanel.hidden=true; window.scrollTo({top:0,behavior:'smooth'}); nextQuestion(); } });
       actions.appendChild(redo); actions.appendChild(del);
       cell.appendChild(actions);
       wrongList.appendChild(cell);
@@ -125,7 +143,68 @@
     URL.revokeObjectURL(url);
   }
 
+  function importWrongFromArray(items){
+    if(!Array.isArray(items)) throw new Error('格式错误：应为数组');
+    const arr = loadWrong();
+    const now = Date.now();
+    const toKey = (it)=> JSON.stringify({type:it.type, data:it.data, answer:it.answer});
+    const map = new Map(arr.map(it=>[toKey(it), it]));
+    let added=0, updated=0;
+    for(const raw of items){
+      if(!raw||!raw.type||!raw.data) continue;
+      const it = {...raw};
+      it.wrongCount = Number(it.wrongCount||1);
+      it.lastWrongAt = it.lastWrongAt || now;
+      const k = toKey(it);
+      if(map.has(k)){
+        const t = map.get(k);
+        t.wrongCount = (t.wrongCount||1) + (it.wrongCount||1);
+        t.lastWrongAt = Math.max(t.lastWrongAt||0, it.lastWrongAt||0);
+        updated++;
+      }else{
+        const n = {type:it.type, data:it.data, answer:it.answer, wrongCount:it.wrongCount, lastWrongAt: it.lastWrongAt};
+        arr.push(n); map.set(k, n); added++;
+      }
+    }
+    saveWrong(arr);
+    return {added, updated, total: arr.length};
+  }
+
+  // 60s challenge controls
+  function startChallenge(){
+    if(challenge.active) return;
+    challenge.active = true; challenge.left = 60; challenge.correct=0; challenge.total=0; challenge.startedAt = Date.now();
+    if(challenge.timer) clearInterval(challenge.timer);
+    challenge.timer = setInterval(()=>{
+      challenge.left--; setScore();
+      if(challenge.left<=0){ endChallenge(true); }
+    }, 1000);
+    setScore();
+  }
+  function endChallenge(showReport){
+    if(challenge.timer){ clearInterval(challenge.timer); challenge.timer=null; }
+    const summary = {correct: challenge.correct, total: challenge.total};
+    challenge.active=false; challenge.left=0;
+    setScore();
+    if(showReport){
+      const acc = summary.total? Math.round(100*summary.correct/summary.total):0;
+      alert(`60s challenge finished\n\nAnswered: ${summary.total}\nCorrect: ${summary.correct} (${acc}%)`);
+    }
+  }
+
+
   const clearWrong = ()=> saveWrong([]);
+
+  // 迁移旧数据：补充 wrongCount/lastWrongAt
+  function migrateWrong(){
+    const arr = loadWrong();
+    let changed=false; const now=Date.now();
+    for(const it of arr){
+      if(it && it.wrongCount==null){ it.wrongCount=1; changed=true; }
+      if(it && it.lastWrongAt==null){ it.lastWrongAt=now; changed=true; }
+    }
+    if(changed) saveWrong(arr);
+  }
 
   // UI 初始化
   function renderPocket(){
@@ -139,8 +218,12 @@
   }
   renderPocket();
 
-  function setScore(){ scoreEl.textContent = `得分：${correct} / ${total}`; }
+  function setScore(){
+    const extra = challenge && challenge.active ? `｜挑战剩余：${challenge.left}s` : '';
+    scoreEl.textContent = `得分：${correct} / ${total}` + extra;
+  }
   setScore();
+  migrateWrong();
   updateWrongCount();
 
   function resetUI(){
@@ -157,7 +240,29 @@
     const mode = modeEl.value;
     reviewOnly = (mode==='review');
 
+    if(mode==='challenge60'){
+      if(!challenge.active) startChallenge();
+      const t = Math.random()<0.5 ? 'p2n' : 'n2p';
+      if(t==='p2n'){
+        const item = POCKET[rnd(0, POCKET.length-1)];
+        currentQ = { type:'p2n', data:item, answer:item.n };
+        qEl.textContent = `${item.p}% ≈ 1/n，n = ?`;
+        ansEl.placeholder = '请输入整数 n';
+        ansEl.focus();
+      } else {
+        const n = rnd(2, 20);
+        const p = percentForN(n);
+        currentQ = { type:'n2p', data:{n, p}, answer:p };
+        qEl.textContent = `1/${n} ≈ ? % （保留1位小数）`;
+        ansEl.placeholder = '如 16.7';
+        ansEl.focus();
+        makeChoices([p, p+0.4, p-0.4, p+0.8]);
+      }
+      return;
+    }
+
     if(mode==='p2n'){ // 给百分数，答 n
+
       const item = POCKET[rnd(0, POCKET.length-1)];
       currentQ = { type:'p2n', data:item, answer:item.n };
       qEl.textContent = `${item.p}% ≈ 1/n，n = ?`;
@@ -232,6 +337,23 @@
   }
 
   // 判题
+  if(wrongBadge){ wrongBadge.addEventListener('click', ()=>{ if(wrongPanel){ wrongPanel.hidden=false; renderWrongList(); window.scrollTo({top:0,behavior:'smooth'}); } }); }
+  if(btnImportWrong && fileImportWrong){
+    btnImportWrong.addEventListener('click', ()=> fileImportWrong.click());
+    fileImportWrong.addEventListener('change', async (e)=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      try{
+        const text = await f.text();
+        let data = JSON.parse(text);
+        if(data && data.items && Array.isArray(data.items)) data = data.items;
+        const res = importWrongFromArray(Array.isArray(data)? data: []);
+        updateWrongCount(); if(wrongPanel && !wrongPanel.hidden) renderWrongList();
+        alert(`\u5bfc\u5165\u5b8c\u6210\uff1a\u65b0\u589e${res.added}\uff0c\u5408\u5e76${res.updated}\uff0c\u73b0\u6709${res.total}`);
+      }catch(err){ alert('JSON \u683c\u5f0f\u4e0d\u6b63\u786e'); }
+      finally{ e.target.value=''; }
+    });
+  }
+  modeEl.addEventListener('change', ()=>{ if(challenge.active && modeEl.value!=='challenge60'){ endChallenge(false); } });
   function submit(){
     if(!currentQ) return;
     const raw = ansEl.value.trim();
@@ -267,7 +389,7 @@
       explain = `到 1/${left.n} 的差≈${dl}%；到 1/${right.n} 的差≈${dr}%`;
     }
 
-    total++; if(ok) correct++;
+    total++; if(ok) correct++; if(challenge.active){ challenge.total++; if(ok) challenge.correct++; }
     resultEl.textContent = ok ? '✅ 正确' : '❌ 错误';
     resultEl.className = 'result ' + (ok?'ok':'bad');
     setScore();
